@@ -2,3 +2,5 @@ manifest.mf
 nbproject/private
 nbproject/genfiles.properties
 nbproject/project.xml
+build
+dist
