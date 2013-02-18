@@ -12,8 +12,9 @@ public class Config {
     private final int z;
     private final float availabilityDistributionShape;
     private final float availabilityDistributionScale;
+    private final float arrivalDistributionShape;
+    private final float arrivalDistributionScale;
     private final int authorAvailability;
-    private final int searchesPerHour;
     
     
     public Config(Properties properties) {
@@ -25,7 +26,8 @@ public class Config {
         z = getInt(properties, "z", 0);
         availabilityDistributionShape = getFloat(properties, "availability_distribution_shape", 0);
         availabilityDistributionScale = getFloat(properties, "availability_distribution_scale", 0);
-        searchesPerHour = getInt(properties, "searches_per_hour", 1);
+        arrivalDistributionShape = getFloat(properties, "arrival_distribution_shape", 0);
+        arrivalDistributionScale = getFloat(properties, "arrival_distribution_scale", 0);
         authorAvailability = getInt(properties, "author_availability", 1);
     }
 
@@ -53,8 +55,12 @@ public class Config {
         return z;
     }
 
-    public int getSearchesPerHour() {
-        return searchesPerHour;
+    public float getArrivalDistributionShape() {
+        return arrivalDistributionShape;
+    }
+
+    public float getArrivalDistributionScale() {
+        return arrivalDistributionScale;
     }
 
     public float getAvailabilityDistributionShape() {

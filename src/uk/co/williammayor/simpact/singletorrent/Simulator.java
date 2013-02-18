@@ -9,13 +9,13 @@ import uk.co.williammayor.simpact.Statistics;
 public class Simulator {
     
     private Config config;
-    private Random random;
-    private WeibullDistribution wb;
+    private WeibullDistribution availabilityDistribution;
+    private WeibullDistribution arrivalDistribution;
     
     public Simulator(Config config) {
         this.config = config;
-        random = new Random();
-        wb = new WeibullDistribution(config.getAvailabilityDistributionShape(), config.getAvailabilityDistributionScale());
+        availabilityDistribution = new WeibullDistribution(config.getAvailabilityDistributionShape(), config.getAvailabilityDistributionScale());
+        arrivalDistribution = new WeibullDistribution(config.getArrivalDistributionShape(), config.getArrivalDistributionScale());
     }
     
     public void trial() {
@@ -24,20 +24,13 @@ public class Simulator {
         for (Node n : network.getAll()) {
             n.check();
         }
-        int popularity = 1;
+        for (Node n : network.getRandomNodes(config.getMaxPopularity())) {
+            n.arriveAfter((int) arrivalDistribution.sample(), (int) availabilityDistribution.sample());
+        }
         while (!(Statistics.getCurrentAwareness() == 0 || Statistics.getCurrentPopularity() == 0)) {
             Statistics.step();
             for (Node n : network.getAll()) {
-                n.step();
-            }
-            int searched = 0;
-            while (searched < config.getSearchesPerHour() && popularity < config.getMaxPopularity()) {
-                Node n = network.getRandomNodes(1)[0];
-                if (n.getState() == Node.State.PASSIVE) {
-                    n.search(config.getZ(), (int) wb.sample());
-                    searched++;
-                    popularity++;
-                }
+                n.step(config);
             }
             for (Node n : network.getAll()) {
                 n.check();

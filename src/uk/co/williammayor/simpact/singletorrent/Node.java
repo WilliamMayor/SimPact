@@ -1,12 +1,14 @@
 package uk.co.williammayor.simpact.singletorrent;
 
 import java.util.HashSet;
+import uk.co.williammayor.simpact.Config;
 import uk.co.williammayor.simpact.Network;
 import uk.co.williammayor.simpact.Statistics;
 
 public class Node {
     
     public static enum State {PASSIVE, ACTIVE, INACTIVE}
+    public static int Z;
    
     private int id;
     private int networkPosition;
@@ -14,6 +16,7 @@ public class Node {
     private HashSet<Node> index;
     private HashSet<Node> peers;
     private int availability;
+    private int timeToSearch;
     private State state;
             
     public Node(final Network network, final int id, final int networkPosition) {
@@ -66,7 +69,7 @@ public class Node {
         return null;
     }
     
-    public void search(int z, int availability) {
+    public void search(int z) {
         if (null == index) {
             // This node has never been contacted before
             index = new HashSet<Node>();
@@ -80,7 +83,6 @@ public class Node {
         }
         peers.add(this);
         index.add(this);
-        this.availability = availability;
         state = State.ACTIVE;
     }
     
@@ -115,10 +117,15 @@ public class Node {
         network.remove(this);
     }
     
-    public void step() {
+    public void step(Config config) {
         if (state == State.ACTIVE) {
             if (--availability == 0) {
                 leave();
+            }
+        }
+        else if (state == State.PASSIVE) {
+            if (timeToSearch-- <= 0) {
+                search(config.getZ());
             }
         }
     }
@@ -139,6 +146,11 @@ public class Node {
         if (null != peers) {
             Statistics.changePopularity(1);
         }
+    }
+    
+    public void arriveAfter(int timeToSearch, int availability) {
+        this.timeToSearch = timeToSearch;
+        this.availability = availability;
     }
     
     @Override
