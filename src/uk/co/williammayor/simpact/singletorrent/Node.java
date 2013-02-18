@@ -120,7 +120,7 @@ public class Node {
     
     public void step(Config config) {
         if (state == State.ACTIVE) {
-            if (--availability == 0) {
+            if (availability-- == 0) {
                 leave();
             }
         }
