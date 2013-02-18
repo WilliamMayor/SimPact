@@ -14,13 +14,17 @@ public class Main {
         FileInputStream in = new FileInputStream(propertiesFilename);
         properties.load(in);
         Config config = new Config(properties);
-        Statistics stats = new Statistics();
-        Simulator simulator = new Simulator();
-        for (int i = 0; i < config.getTrials(); i++) {
-            System.err.println("Trial " + i);
-            simulator.run(config, stats);
-            stats.reset();
+        Simulator simulator = new Simulator(config);
+        int trialsRequired = config.getTrials();
+        for (int i = 0; i < trialsRequired; i++) {
+            simulator.trial();
+            Statistics.reset();
+            int newTrialsRequired = Statistics.requiredTrials();
+            if (newTrialsRequired != 0) {
+                trialsRequired = newTrialsRequired;
+            }
+            System.err.println("Trial " + (i+1) + " of " + trialsRequired + " required");
         }
-        stats.print();
+        Statistics.print();
     }
 }

@@ -10,11 +10,10 @@ public class Config {
     private final int r;
     private final int maxPopularity;
     private final int z;
-    private final int downloadTime;
+    private final float availabilityDistributionShape;
+    private final float availabilityDistributionScale;
     private final int authorAvailability;
     private final int searchesPerHour;
-    private final float abandonProbability;
-    private final float seedProbability;
     
     
     public Config(Properties properties) {
@@ -24,11 +23,10 @@ public class Config {
         r = getInt(properties, "r", 0);
         maxPopularity = getInt(properties, "max_popularity", 0);
         z = getInt(properties, "z", 0);
-        downloadTime = getInt(properties, "download_time", 0);
+        availabilityDistributionShape = getFloat(properties, "availability_distribution_shape", 0);
+        availabilityDistributionScale = getFloat(properties, "availability_distribution_scale", 0);
         searchesPerHour = getInt(properties, "searches_per_hour", 1);
         authorAvailability = getInt(properties, "author_availability", 1);
-        abandonProbability = getFloat(properties, "abandon_probability", 1f);
-        seedProbability = getFloat(properties, "seed_probability", 1f);
     }
 
     public int getM() {
@@ -59,16 +57,12 @@ public class Config {
         return searchesPerHour;
     }
 
-    public int getDownloadTime() {
-        return downloadTime;
+    public float getAvailabilityDistributionShape() {
+        return availabilityDistributionShape;
     }
 
-    public float getAbandonProbability() {
-        return abandonProbability;
-    }
-
-    public float getSeedProbability() {
-        return seedProbability;
+    public float getAvailabilityDistributionScale() {
+        return availabilityDistributionScale;
     }
     
     public int getAuthorAvailability() {

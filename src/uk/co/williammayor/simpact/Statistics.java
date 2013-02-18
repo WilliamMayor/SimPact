@@ -1,43 +1,32 @@
 package uk.co.williammayor.simpact;
 
 import java.util.ArrayList;
+import org.apache.commons.math3.distribution.NormalDistribution;
 
 public class Statistics {
 
-    private final ArrayList<MovingAverage> popularity;
-    private final ArrayList<MovingAverage> awareness;
-    private final ArrayList<MovingAverage> badData;
+    private static final ArrayList<MovingAverage> popularity = new ArrayList<MovingAverage>();
+    private static final ArrayList<MovingAverage> awareness = new ArrayList<MovingAverage>();
+    private static final ArrayList<MovingAverage> badData = new ArrayList<MovingAverage>();
     
-    private int time;
-    private int currentPopularity;
-    private int currentAwareness;
-    private int currentBadData;
-    
-    
-    public Statistics() {
-        popularity = new ArrayList<MovingAverage>();
-        awareness = new ArrayList<MovingAverage>();
-        badData = new ArrayList<MovingAverage>();
-        
-        time = 0;
-        currentPopularity = 0;
-        currentAwareness = 0;
-        currentBadData = 0;
-    }
-
-    public int getCurrentPopularity() {
+    private static int time;
+    private static int currentPopularity;
+    private static int currentAwareness;
+    private static int currentBadData;
+   
+    public static int getCurrentPopularity() {
         return currentPopularity;
     }
 
-    public int getCurrentAwareness() {
+    public static int getCurrentAwareness() {
         return currentAwareness;
     }
     
-    public int getTime() {
+    public static int getTime() {
         return time;
     }
     
-    public void reset() {
+    public static void reset() {
         bank();
         currentPopularity = 0;
         currentAwareness = 0;
@@ -45,37 +34,57 @@ public class Statistics {
         time = 0;
     }
     
-    public void step() {
+    public static void step() {
         bank();
+        currentPopularity = 0;
+        currentAwareness = 0;
+        currentBadData = 0;
         time++;
     }
     
-    private void bank() {
+    private static void bank() {
         bank(popularity, time, currentPopularity);
         bank(awareness, time, currentAwareness);
         bank(badData, time, currentBadData);
     }
     
-    private void bank(ArrayList<MovingAverage> list, int time, int value) {
+    private static void bank(ArrayList<MovingAverage> list, int time, int value) {
         while (list.size() < time + 1) {
             list.add(new MovingAverage());
         }
         list.get(time).add(value);
     }
 
-    public void changePopularity(int value) {
+    public static void changePopularity(int value) {
         currentPopularity += value;
     }
     
-    public void changeAwareness(int value) {
+    public static void changeAwareness(int value) {
         currentAwareness += value;
     }
     
-    public void changeBadData(int value) {
+    public static void changeBadData(int value) {
         currentBadData += value;
     }
     
-    public void print() {
+    public static int requiredTrials() {
+        double a = 0.05;
+        double e = 0.05;
+        NormalDistribution n = new NormalDistribution();
+        double z = n.inverseCumulativeProbability(1-a/2);
+        int requiredTrials = 0;
+        for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData}) {
+            for (MovingAverage ma : list) {
+                double mean = ma.getAverage();
+                double standardDeviation = ma.getStandardDeviation();
+                int trials = (int) Math.ceil((z*standardDeviation)/(e*mean));
+                requiredTrials = Math.max(trials, requiredTrials);
+            }
+        }
+        return requiredTrials;
+    }
+    
+    public static void print() {
         StringBuilder sb = new StringBuilder("time, popularity, awareness, bad_data");
         int maxLength = (awareness.size() > popularity.size()) ? awareness.size() : popularity.size();
         maxLength = (badData.size() > maxLength) ? badData.size() : maxLength;
@@ -92,22 +101,27 @@ public class Statistics {
         System.out.println(sb.toString());
     }
 
-    private class MovingAverage {
+    public static class MovingAverage {
 
         private int count;
-        private double average;
-
-        public MovingAverage() {
-            count = 0;
-            average = 0d;
-        }
-
+        private double total;
+        private double squaredTotal;
+        
         public double getAverage() {
-            return average;
+            return total / count;
+        }
+        
+        public double getStandardDeviation() {
+            return Math.sqrt(squaredTotal / count - Math.pow(total / count, 2));
         }
 
         public void add(int data) {
-            average = (data + count * average) / ++count;
+            if (data > 0 && squaredTotal > Double.MAX_VALUE - data) {
+                throw new RuntimeException("squaredTotal overflow");
+            }
+            total += data;
+            squaredTotal += Math.pow(data, 2);
+            count++;
         }
     }
 }
