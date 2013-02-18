@@ -23,6 +23,7 @@ public class Node {
         this.id = id;
         this.networkPosition = networkPosition;
         this.network = network;
+        this.timeToSearch = -1;
         state = State.PASSIVE;
     }
 
@@ -123,8 +124,8 @@ public class Node {
                 leave();
             }
         }
-        else if (state == State.PASSIVE) {
-            if (timeToSearch-- <= 0) {
+        else if (state == State.PASSIVE && timeToSearch != -1) {
+            if (timeToSearch-- == 0) {
                 search(config.getZ());
             }
         }

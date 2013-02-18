@@ -17,13 +17,15 @@ public class Main {
         Simulator simulator = new Simulator(config);
         int trialsRequired = config.getTrials();
         for (int i = 0; i < trialsRequired; i++) {
+            System.err.println("Starting trial " + (i+1));
             simulator.trial();
             Statistics.reset();
             int newTrialsRequired = Statistics.requiredTrials();
             if (newTrialsRequired != 0) {
                 trialsRequired = newTrialsRequired;
             }
-            System.err.println("Trial " + (i+1) + " of " + trialsRequired + " required");
+            System.err.println("Require " + trialsRequired + " trials");
+            System.err.println("Finished trial " + (i+1));
         }
         Statistics.print();
     }
