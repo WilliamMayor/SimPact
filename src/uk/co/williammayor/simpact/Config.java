@@ -15,6 +15,7 @@ public class Config {
     private final float arrivalDistributionShape;
     private final float arrivalDistributionScale;
     private final int authorAvailability;
+    private final int maxTime;
     
     
     public Config(Properties properties) {
@@ -29,6 +30,7 @@ public class Config {
         arrivalDistributionShape = getFloat(properties, "arrival_distribution_shape", 0);
         arrivalDistributionScale = getFloat(properties, "arrival_distribution_scale", 0);
         authorAvailability = getInt(properties, "author_availability", 1);
+        maxTime = getInt(properties, "max_time", 20);
     }
 
     public int getM() {
@@ -73,6 +75,10 @@ public class Config {
     
     public int getAuthorAvailability() {
         return authorAvailability;
+    }
+    
+    public int getMaxTime() {
+        return maxTime;
     }
     
     private int getInt(Properties config, String key, int _default) {
