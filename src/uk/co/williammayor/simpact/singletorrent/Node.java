@@ -53,6 +53,7 @@ public class Node {
         for (Node n : network.getRandomNodes(r)) {
             n.respond(this);
         }
+        Statistics.changeRequestCount(r);
     }
     /**
      * Go through the list of possible active nodes performing a peer exchange with each.
@@ -79,19 +80,24 @@ public class Node {
             // This node has been contacted and might be aware of an active node already
             peers = findPeers(index);
         }
+        int requestCount = 0;
         while (null == peers) {
             peers = findPeers(query(z));
+            requestCount += z;
         }
         peers.add(this);
         index.add(this);
         state = State.ACTIVE;
         Statistics.changeJoined(1);
+        Statistics.changeRequestCount(requestCount);
     }
     
     public HashSet<Node> query(int z) {
         HashSet<Node> results = new HashSet<Node>();
         for (Node n : network.getRandomNodes(z)) {
-            results.addAll(n.respond(this));
+            HashSet<Node> response = n.respond(this);
+            results.addAll(response);
+            Statistics.changeResponseSize(response.size() - 1); // -1 to remove self reference
         }
         return results;
     }
