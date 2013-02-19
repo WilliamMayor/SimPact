@@ -20,10 +20,7 @@ public class Main {
             System.err.println("Starting trial " + (i+1));
             simulator.trial();
             Statistics.reset();
-            int newTrialsRequired = Statistics.requiredTrials();
-            if (newTrialsRequired != 0) {
-                trialsRequired = newTrialsRequired;
-            }
+            trialsRequired = Math.max(trialsRequired, Statistics.requiredTrials());
             System.err.println("Require " + trialsRequired + " trials");
             System.err.println("Finished trial " + (i+1));
         }

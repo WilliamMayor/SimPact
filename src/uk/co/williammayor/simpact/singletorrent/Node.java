@@ -85,6 +85,7 @@ public class Node {
         peers.add(this);
         index.add(this);
         state = State.ACTIVE;
+        Statistics.changeJoined(1);
     }
     
     public HashSet<Node> query(int z) {
@@ -116,6 +117,7 @@ public class Node {
         index = null;
         state = State.INACTIVE;
         network.remove(this);
+        Statistics.changeLeft(1);
     }
     
     public void step(Config config) {
