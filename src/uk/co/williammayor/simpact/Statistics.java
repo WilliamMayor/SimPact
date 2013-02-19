@@ -10,6 +10,7 @@ public class Statistics {
     private static final ArrayList<MovingAverage> badData = new ArrayList<MovingAverage>();
     private static final ArrayList<MovingAverage> joined = new ArrayList<MovingAverage>();
     private static final ArrayList<MovingAverage> left = new ArrayList<MovingAverage>();
+    private static final ArrayList<MovingAverage> queryCount = new ArrayList<MovingAverage>();
     
     private static int time;
     private static int currentPopularity;
@@ -17,6 +18,7 @@ public class Statistics {
     private static int currentBadData;
     private static int currentJoined;
     private static int currentLeft;
+    private static MovingAverage currentQueryCount;
    
     public static int getCurrentPopularity() {
         return currentPopularity;
@@ -25,11 +27,7 @@ public class Statistics {
     public static int getCurrentAwareness() {
         return currentAwareness;
     }
-    
-    public static int getTime() {
-        return time;
-    }
-    
+       
     public static void reset() {
         bank();
         currentPopularity = 0;
@@ -37,6 +35,7 @@ public class Statistics {
         currentBadData = 0;
         currentJoined = 0;
         currentLeft = 0;
+        currentQueryCount = new MovingAverage();
         time = 0;
     }
     
@@ -47,6 +46,7 @@ public class Statistics {
         currentBadData = 0;
         currentJoined = 0;
         currentLeft = 0;
+        currentQueryCount = new MovingAverage();
         time++;
     }
     
@@ -56,9 +56,17 @@ public class Statistics {
         bank(badData, time, currentBadData);
         bank(joined, time, currentJoined);
         bank(left, time, currentLeft);
+        bank(queryCount, time, currentQueryCount);
     }
     
-    private static void bank(ArrayList<MovingAverage> list, int time, int value) {
+    private static void bank(ArrayList<MovingAverage> list, int time, double value) {
+        while (list.size() < time + 1) {
+            list.add(new MovingAverage());
+        }
+        list.get(time).add(value);
+    }
+    
+    private static void bank(ArrayList<MovingAverage> list, int time, MovingAverage value) {
         while (list.size() < time + 1) {
             list.add(new MovingAverage());
         }
@@ -85,13 +93,17 @@ public class Statistics {
         currentLeft += value;
     }
     
+    public static void changeQueryCount(int value) {
+        currentQueryCount.add(value);
+    }
+    
     public static int requiredTrials() {
         double a = 0.05;
         double e = 0.05;
         NormalDistribution n = new NormalDistribution();
         double z = n.inverseCumulativeProbability(1-a/2);
         int requiredTrials = 0;
-        for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left}) {
+        for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left, queryCount}) {
             for (MovingAverage ma : list) {
                 double mean = ma.getAverage();
                 double standardDeviation = ma.getStandardDeviation();
@@ -103,10 +115,10 @@ public class Statistics {
     }
     
     public static void print() {
-        StringBuilder sb = new StringBuilder("time, popularity, awareness, bad_data, joined, left");
+        StringBuilder sb = new StringBuilder("time, popularity, awareness, bad_data, joined, left, queryCount");
         for (int i = 0; i < popularity.size(); i++) {
             sb.append("\n").append(i);
-            for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left}) {
+            for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left, queryCount}) {
                 sb.append(", ");
                 if (list.size() > i) {
                     //sb.append(String.format("%.5g%n", list.get(i).getAverage()));
@@ -131,13 +143,23 @@ public class Statistics {
             return Math.sqrt(squaredTotal / count - Math.pow(total / count, 2));
         }
 
-        public void add(int data) {
-            if (data > 0 && squaredTotal > Double.MAX_VALUE - data) {
+        public void add(double data) {
+            double squared = Math.pow(data, 2);
+            if (squared > 0 && squaredTotal > Double.MAX_VALUE - squared) {
                 throw new RuntimeException("squaredTotal overflow");
             }
             total += data;
-            squaredTotal += Math.pow(data, 2);
+            squaredTotal += squared;
             count++;
+        }
+        
+        public void add(MovingAverage data) {
+            if (data.squaredTotal > 0 && squaredTotal > Double.MAX_VALUE - data.squaredTotal) {
+                throw new RuntimeException("squaredTotal overflow");
+            }
+            total += data.total;
+            squaredTotal += data.squaredTotal;
+            count += data.count;
         }
     }
 }
