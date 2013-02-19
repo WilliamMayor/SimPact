@@ -10,7 +10,7 @@ public class Statistics {
     private static final ArrayList<MovingAverage> badData = new ArrayList<MovingAverage>();
     private static final ArrayList<MovingAverage> joined = new ArrayList<MovingAverage>();
     private static final ArrayList<MovingAverage> left = new ArrayList<MovingAverage>();
-    private static final ArrayList<MovingAverage> queryCount = new ArrayList<MovingAverage>();
+    private static final ArrayList<MovingAverage> requestCount = new ArrayList<MovingAverage>();
     
     private static int time;
     private static int currentPopularity;
@@ -18,7 +18,7 @@ public class Statistics {
     private static int currentBadData;
     private static int currentJoined;
     private static int currentLeft;
-    private static MovingAverage currentQueryCount = new MovingAverage();
+    private static MovingAverage currentRequestCount = new MovingAverage();
    
     public static int getCurrentPopularity() {
         return currentPopularity;
@@ -35,7 +35,7 @@ public class Statistics {
         currentBadData = 0;
         currentJoined = 0;
         currentLeft = 0;
-        currentQueryCount = new MovingAverage();
+        currentRequestCount = new MovingAverage();
         time = 0;
     }
     
@@ -46,7 +46,7 @@ public class Statistics {
         currentBadData = 0;
         currentJoined = 0;
         currentLeft = 0;
-        currentQueryCount = new MovingAverage();
+        currentRequestCount = new MovingAverage();
         time++;
     }
     
@@ -56,7 +56,7 @@ public class Statistics {
         bank(badData, time, currentBadData);
         bank(joined, time, currentJoined);
         bank(left, time, currentLeft);
-        bank(queryCount, time, currentQueryCount);
+        bank(requestCount, time, currentRequestCount);
     }
     
     private static void bank(ArrayList<MovingAverage> list, int time, double value) {
@@ -93,8 +93,8 @@ public class Statistics {
         currentLeft += value;
     }
     
-    public static void changeQueryCount(int value) {
-        currentQueryCount.add(value);
+    public static void changeRequestCount(int value) {
+        currentRequestCount.add(value);
     }
     
     public static int requiredTrials() {
@@ -103,7 +103,7 @@ public class Statistics {
         NormalDistribution n = new NormalDistribution();
         double z = n.inverseCumulativeProbability(1-a/2);
         int requiredTrials = 0;
-        for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left, queryCount}) {
+        for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left, requestCount}) {
             for (MovingAverage ma : list) {
                 double mean = ma.getAverage();
                 double standardDeviation = ma.getStandardDeviation();
@@ -115,10 +115,10 @@ public class Statistics {
     }
     
     public static void print() {
-        StringBuilder sb = new StringBuilder("time, popularity, awareness, bad_data, joined, left, queryCount");
+        StringBuilder sb = new StringBuilder("time, popularity, awareness, bad_data, joined, left, request_count");
         for (int i = 0; i < popularity.size(); i++) {
             sb.append("\n").append(i);
-            for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left, queryCount}) {
+            for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left, requestCount}) {
                 sb.append(", ");
                 if (list.size() > i) {
                     //sb.append(String.format("%.5g%n", list.get(i).getAverage()));
