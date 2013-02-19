@@ -18,7 +18,7 @@ public class Statistics {
     private static int currentBadData;
     private static int currentJoined;
     private static int currentLeft;
-    private static MovingAverage currentQueryCount;
+    private static MovingAverage currentQueryCount = new MovingAverage();
    
     public static int getCurrentPopularity() {
         return currentPopularity;
