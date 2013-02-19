@@ -11,6 +11,7 @@ public class Statistics {
     private static final ArrayList<MovingAverage> joined = new ArrayList<MovingAverage>();
     private static final ArrayList<MovingAverage> left = new ArrayList<MovingAverage>();
     private static final ArrayList<MovingAverage> requestCount = new ArrayList<MovingAverage>();
+    private static final ArrayList<MovingAverage> responseSize = new ArrayList<MovingAverage>();
     
     private static int time;
     private static int currentPopularity;
@@ -19,6 +20,7 @@ public class Statistics {
     private static int currentJoined;
     private static int currentLeft;
     private static MovingAverage currentRequestCount = new MovingAverage();
+    private static MovingAverage currentResponseSize = new MovingAverage();
    
     public static int getCurrentPopularity() {
         return currentPopularity;
@@ -36,6 +38,7 @@ public class Statistics {
         currentJoined = 0;
         currentLeft = 0;
         currentRequestCount = new MovingAverage();
+        currentResponseSize = new MovingAverage();
         time = 0;
     }
     
@@ -47,6 +50,7 @@ public class Statistics {
         currentJoined = 0;
         currentLeft = 0;
         currentRequestCount = new MovingAverage();
+        currentResponseSize = new MovingAverage();
         time++;
     }
     
@@ -57,6 +61,7 @@ public class Statistics {
         bank(joined, time, currentJoined);
         bank(left, time, currentLeft);
         bank(requestCount, time, currentRequestCount);
+        bank(responseSize, time, currentResponseSize);
     }
     
     private static void bank(ArrayList<MovingAverage> list, int time, double value) {
@@ -97,13 +102,17 @@ public class Statistics {
         currentRequestCount.add(value);
     }
     
+    public static void changeResponseSize(int value) {
+        currentResponseSize.add(value);
+    }
+    
     public static int requiredTrials() {
         double a = 0.05;
         double e = 0.05;
         NormalDistribution n = new NormalDistribution();
         double z = n.inverseCumulativeProbability(1-a/2);
         int requiredTrials = 0;
-        for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left, requestCount}) {
+        for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left, requestCount, responseSize}) {
             for (MovingAverage ma : list) {
                 double mean = ma.getAverage();
                 double standardDeviation = ma.getStandardDeviation();
@@ -115,10 +124,10 @@ public class Statistics {
     }
     
     public static void print() {
-        StringBuilder sb = new StringBuilder("time, popularity, awareness, bad_data, joined, left, request_count");
+        StringBuilder sb = new StringBuilder("time, popularity, awareness, bad_data, joined, left, request_count, response_size");
         for (int i = 0; i < popularity.size(); i++) {
             sb.append("\n").append(i);
-            for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left, requestCount}) {
+            for (ArrayList<MovingAverage> list : new ArrayList[]{popularity, awareness, badData, joined, left, requestCount, responseSize}) {
                 sb.append(", ");
                 if (list.size() > i) {
                     //sb.append(String.format("%.5g%n", list.get(i).getAverage()));

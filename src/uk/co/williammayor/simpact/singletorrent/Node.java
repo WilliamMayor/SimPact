@@ -95,7 +95,9 @@ public class Node {
     public HashSet<Node> query(int z) {
         HashSet<Node> results = new HashSet<Node>();
         for (Node n : network.getRandomNodes(z)) {
-            results.addAll(n.respond(this));
+            HashSet<Node> response = n.respond(this);
+            results.addAll(response);
+            Statistics.changeResponseSize(response.size() - 1); // -1 to remove self reference
         }
         return results;
     }
