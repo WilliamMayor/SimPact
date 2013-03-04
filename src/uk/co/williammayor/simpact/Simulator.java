@@ -1,33 +1,26 @@
 package uk.co.williammayor.simpact;
 
-import org.apache.commons.math3.distribution.WeibullDistribution;
-
 public class Simulator {
     
     private Config config;
-    private WeibullDistribution availabilityDistribution;
-    private WeibullDistribution arrivalDistribution;
     
     public Simulator(Config config) {
         this.config = config;
-        availabilityDistribution = new WeibullDistribution(config.getAvailabilityDistributionShape(), config.getAvailabilityDistributionScale());
-        arrivalDistribution = new WeibullDistribution(config.getArrivalDistributionShape(), config.getArrivalDistributionScale());
     }
     
     public void trial() {
-        Network network = new Network(config.getN());
-        Node[] activeNodes = network.getRandomNodes(config.getMaxPopularity() + 1);
-        activeNodes[0].author(config.getR(), config.getAuthorAvailability());
+        Network network = new Network(config.getInt("n"));
+        Node[] activeNodes = network.getRandomNodes(config.getInt("max_popularity") + 1);
+        activeNodes[0].author(config.getInt("r"), config.getInt("author_availability"));
         for (Node n : network.getAll()) {
             n.check();
         }
-        int arriveAfter = 0;
         for (int i = 1; i < activeNodes.length; i++) {
             Node n = activeNodes[i];
-            arriveAfter += (int) arrivalDistribution.sample();
-            n.arriveAfter(arriveAfter, (int) availabilityDistribution.sample());
+            n.arriveAfter(0);
+            n.stayFor(1);
         }
-        for (int i = 0; i < config.getMaxTime(); i++) {
+        for (int i = 0; i < config.getInt("max_time"); i++) {
             Statistics.step();
             for (Node n : activeNodes) {
                 n.step(config);
