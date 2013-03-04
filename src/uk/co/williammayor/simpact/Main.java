@@ -4,7 +4,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
-import uk.co.williammayor.simpact.singletorrent.Simulator;
 
 public class Main {
 

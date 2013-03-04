@@ -1,4 +1,4 @@
-package uk.co.williammayor.simpact.singletorrent;
+package uk.co.williammayor.simpact;
 
 import java.util.HashSet;
 import uk.co.williammayor.simpact.Config;

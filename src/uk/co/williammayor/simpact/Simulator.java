@@ -1,4 +1,4 @@
-package uk.co.williammayor.simpact.singletorrent;
+package uk.co.williammayor.simpact;
 
 import java.util.Random;
 import org.apache.commons.math3.distribution.WeibullDistribution;
@@ -28,14 +28,17 @@ public class Simulator {
             n.check();
         }
         System.err.println("    Setting arrivals and departures");
-        for (Node n : network.getRandomNodes(config.getMaxPopularity())) {
-            n.arriveAfter((int) arrivalDistribution.sample(), (int) availabilityDistribution.sample());
+        int arriveAfter = 0;
+        Node[] activeNodes = network.getRandomNodes(config.getMaxPopularity());
+        for (Node n : activeNodes) {
+            arriveAfter +=(int) arrivalDistribution.sample();
+            n.arriveAfter(arriveAfter, (int) availabilityDistribution.sample());
         }
         System.err.println("    Entering loop");
         while (Statistics.getCurrentAwareness() != 0 && Statistics.getCurrentPopularity() != 0) {
             Statistics.step();
             System.err.println("        Increase time");
-            for (Node n : network.getAll()) {
+            for (Node n : activeNodes) {
                 n.step(config);
             }
             System.err.println("        Update statistics");
