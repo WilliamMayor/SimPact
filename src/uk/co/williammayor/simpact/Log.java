@@ -12,10 +12,12 @@ public class Log {
 
     private BufferedWriter out;
     private String path;
+    private int count;
 
     public Log(String path) throws IOException {
         this.path = path;
         out = new BufferedWriter(new FileWriter(path));
+        count = 1;
     }
 
     public void println(String line) {
@@ -34,7 +36,7 @@ public class Log {
             System.err.println("Could not close log, " + path);
         }
         try {
-            out = new BufferedWriter(new FileWriter(path));
+            out = new BufferedWriter(new FileWriter(path + "." + count++));
         } catch (IOException ex) {
             System.err.println("Could not re-create output writer, " + path);
         }

@@ -6,3 +6,6 @@ build
 dist
 
 *.properties
+
+results.txt*
+status.txt*

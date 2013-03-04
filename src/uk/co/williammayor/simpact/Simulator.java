@@ -1,10 +1,6 @@
 package uk.co.williammayor.simpact;
 
-import java.util.Random;
 import org.apache.commons.math3.distribution.WeibullDistribution;
-import uk.co.williammayor.simpact.Config;
-import uk.co.williammayor.simpact.Network;
-import uk.co.williammayor.simpact.Statistics;
 
 public class Simulator {
     
@@ -28,7 +24,7 @@ public class Simulator {
         int arriveAfter = 0;
         for (int i = 1; i < activeNodes.length; i++) {
             Node n = activeNodes[i];
-            arriveAfter +=(int) arrivalDistribution.sample();
+            arriveAfter += (int) arrivalDistribution.sample();
             n.arriveAfter(arriveAfter, (int) availabilityDistribution.sample());
         }
         while (Statistics.getCurrentAwareness() != 0 && Statistics.getCurrentPopularity() != 0) {
