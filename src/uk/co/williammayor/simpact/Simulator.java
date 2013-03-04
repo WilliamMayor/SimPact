@@ -20,13 +20,14 @@ public class Simulator {
     
     public void trial() {
         Network network = new Network(config.getN());
-        network.getRandomNodes(1)[0].author(config.getR(), config.getAuthorAvailability());
+        Node[] activeNodes = network.getRandomNodes(config.getMaxPopularity() + 1);
+        activeNodes[0].author(config.getR(), config.getAuthorAvailability());
         for (Node n : network.getAll()) {
             n.check();
         }
         int arriveAfter = 0;
-        Node[] activeNodes = network.getRandomNodes(config.getMaxPopularity());
-        for (Node n : activeNodes) {
+        for (int i = 1; i < activeNodes.length; i++) {
+            Node n = activeNodes[i];
             arriveAfter +=(int) arrivalDistribution.sample();
             n.arriveAfter(arriveAfter, (int) availabilityDistribution.sample());
         }
