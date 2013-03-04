@@ -1,9 +1,6 @@
 package uk.co.williammayor.simpact;
 
 import java.util.HashSet;
-import uk.co.williammayor.simpact.Config;
-import uk.co.williammayor.simpact.Network;
-import uk.co.williammayor.simpact.Statistics;
 
 public class Node {
     
@@ -134,7 +131,7 @@ public class Node {
         }
         else if (state == State.PASSIVE && timeToSearch != -1) {
             if (timeToSearch-- == 0) {
-                search(config.getZ());
+                search(config.getInt("z"));
             }
         }
     }
@@ -157,8 +154,11 @@ public class Node {
         }
     }
     
-    public void arriveAfter(int timeToSearch, int availability) {
+    public void arriveAfter(int timeToSearch) {
         this.timeToSearch = timeToSearch;
+    }
+    
+    public void stayFor(int availability) {
         this.availability = availability;
     }
     

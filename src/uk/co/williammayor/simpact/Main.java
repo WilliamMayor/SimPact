@@ -18,7 +18,7 @@ public class Main {
         Config config = new Config(properties);
         
         Simulator simulator = new Simulator(config);
-        int trialsRequired = config.getTrials();
+        int trialsRequired = config.getInt("trials", 1000);
         for (int i = 0; i < trialsRequired; i++) {
             trialsRequired = Math.max(trialsRequired, Statistics.requiredTrials());
             status.println("Require " + trialsRequired + " trials");
