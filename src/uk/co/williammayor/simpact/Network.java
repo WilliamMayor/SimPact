@@ -2,7 +2,6 @@ package uk.co.williammayor.simpact;
 
 import java.util.HashSet;
 import java.util.Random;
-import uk.co.williammayor.simpact.singletorrent.Node;
 /**
  * Represents the P2P network being simulated.
  * It has a fixed size, when nodes leave they are immediately replaced by a

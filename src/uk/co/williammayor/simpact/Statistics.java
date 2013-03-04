@@ -123,7 +123,7 @@ public class Statistics {
         return requiredTrials;
     }
     
-    public static void print() {
+    public static String summarise() {
         StringBuilder sb = new StringBuilder("time, popularity, awareness, bad_data, joined, left, request_count, response_size");
         for (int i = 0; i < popularity.size(); i++) {
             sb.append("\n").append(i);
@@ -135,7 +135,7 @@ public class Statistics {
                 }
             }
         }
-        System.out.println(sb.toString());
+        return sb.toString();
     }
 
     public static class MovingAverage {

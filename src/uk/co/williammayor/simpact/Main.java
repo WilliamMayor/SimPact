@@ -4,26 +4,32 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
-import uk.co.williammayor.simpact.singletorrent.Simulator;
 
 public class Main {
 
-    public static void main(String[] args) throws FileNotFoundException, IOException {
+    public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
+        Log results = new Log("results.txt");
+        Log status = new Log("status.txt");
+        
         String propertiesFilename = "simulation.properties";
         Properties properties = new Properties();
         FileInputStream in = new FileInputStream(propertiesFilename);
         properties.load(in);
         Config config = new Config(properties);
+        
         Simulator simulator = new Simulator(config);
         int trialsRequired = config.getTrials();
         for (int i = 0; i < trialsRequired; i++) {
-            System.err.println("Starting trial " + (i+1));
+            trialsRequired = Math.max(trialsRequired, Statistics.requiredTrials());
+            status.println("Require " + trialsRequired + " trials");
+            status.println("Starting trial " + (i+1));
+            
             simulator.trial();
             Statistics.reset();
-            trialsRequired = Math.max(trialsRequired, Statistics.requiredTrials());
-            System.err.println("Require " + trialsRequired + " trials");
-            System.err.println("Finished trial " + (i+1));
+            results.println(Statistics.summarise());
+            
+            results.reset();
+            status.reset();
         }
-        Statistics.print();
     }
 }

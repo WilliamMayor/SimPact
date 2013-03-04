@@ -4,3 +4,8 @@ nbproject/genfiles.properties
 nbproject/project.xml
 build
 dist
+
+*.properties
+
+results.txt*
+status.txt*
