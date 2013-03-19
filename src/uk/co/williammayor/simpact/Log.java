@@ -10,21 +10,25 @@ import java.io.IOException;
  */
 public class Log {
 
+    private boolean first;
     private BufferedWriter out;
-    private String path;
-    private int count;
+    private String name;
 
-    public Log(String path) throws IOException {
-        this.path = path;
-        out = new BufferedWriter(new FileWriter(path));
-        count = 1;
+    public Log(String name) throws IOException {
+        this.name = name;
+        first = true;
+        out = makeWriter(name, first);
     }
 
     public void println(String line) {
+        System.out.println(name + ": " + line);
+        if (null == out) {
+            out = makeWriter(name, first);
+        }
         try {
             out.write(line + "\n");
         } catch (IOException ex) {
-            System.err.println("Error writing to log, " + path);
+            System.err.println("Error writing to log, " + name);
             System.err.println(line);
         }
     }
@@ -33,12 +37,19 @@ public class Log {
         try {
             out.close();
         } catch (IOException ex) {
-            System.err.println("Could not close log, " + path);
+            System.err.println("Could not close log, " + name);
         }
+        out = null;
+        first = !first;
+    }
+    
+    private BufferedWriter makeWriter(String name, boolean first) {
         try {
-            out = new BufferedWriter(new FileWriter(path + "." + count++));
+            String path = name + "-" + (first ? "1" : "2") + ".txt";
+            return new BufferedWriter(new FileWriter(path));
         } catch (IOException ex) {
-            System.err.println("Could not re-create output writer, " + path);
+            System.err.println("Could not re-create output writer, " + name);
+            return null;
         }
     }
 }

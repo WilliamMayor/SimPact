@@ -8,8 +8,8 @@ import java.util.Properties;
 public class Main {
 
     public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
-        Log results = new Log("results.txt");
-        Log status = new Log("status.txt");
+        Log results = new Log("results");
+        Log status = new Log("status");
         
         String propertiesFilename = "simulation.properties";
         Properties properties = new Properties();
