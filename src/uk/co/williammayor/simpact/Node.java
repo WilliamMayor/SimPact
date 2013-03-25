@@ -1,56 +1,81 @@
 package uk.co.williammayor.simpact;
 
 import java.util.HashSet;
+import org.apache.commons.math3.distribution.ExponentialDistribution;
 
 public class Node {
     
-    public static enum State {PASSIVE, ACTIVE, INACTIVE}
-    public static int Z;
+    public static enum State {PASSIVE, WAITING, DOWNLOADING, SEEDING, AUTHOR, DEAD}
+    public static Network NETWORK;
+    public static Config CONFIG;
+    public static ExponentialDistribution PEER_ARRIVAL_DISTRIBUTION;
+    public static ExponentialDistribution ABORT_DISTRIBUTION;
+    public static ExponentialDistribution SEED_FOR_DISTRIBUTION;
+    
+    public static void setup(Config config) {
+        CONFIG = config;
+        PEER_ARRIVAL_DISTRIBUTION = new ExponentialDistribution(config.getFloat("peer_arrival_average"));
+        ABORT_DISTRIBUTION = new ExponentialDistribution(config.getFloat("average_abort_time"));
+        SEED_FOR_DISTRIBUTION = new ExponentialDistribution(config.getFloat("average_seed_time"));
+    }
    
     private int id;
     private int networkPosition;
-    private final Network network;
     private HashSet<Node> index;
     private HashSet<Node> peers;
-    private int availability;
-    private int timeToSearch;
+    private int abortAfter;
+    private int seedRemaining;
+    private int searchAfter;
+    private int resetAfter;
+    private int percentDownloadComplete;
     private State state;
             
-    public Node(final Network network, final int id, final int networkPosition) {
+    public Node(final int id, final int networkPosition) {
         this.id = id;
         this.networkPosition = networkPosition;
-        this.network = network;
-        this.timeToSearch = -1;
         state = State.PASSIVE;
-    }
-
-    public int getId() {
-        return id;
     }
     
     public int getPosition() {
         return networkPosition;
     }
     
-    public State getState() {
-        return state;
+    public HashSet<Node> getPeers() {
+        return peers;
     }
+
     /**
      * Tell the node to become the author of the torrent.
      * The author will create a HashSet<Node> for its index and peers list.
      * It will then make 'dummy' requests to config.getR() other nodes.
      */   
-    public void author(int r, int availability) {
+    public void author() {
         index = new HashSet<Node>();
         peers = new HashSet<Node>();
         index.add(this);
         peers.add(this);
-        this.availability = availability;
-        state = State.ACTIVE;
-        for (Node n : network.getRandomNodes(r)) {
+        state = State.AUTHOR;
+        for (Node n : NETWORK.getRandomNodes(CONFIG.getInt("r"))) {
             n.respond(this);
         }
-        Statistics.changeRequestCount(r);
+    }
+    /**
+     * Tell the node that it should attempt a download at some point
+     */
+    public void activate() {
+        searchAfter = (int) PEER_ARRIVAL_DISTRIBUTION.sample();
+        abortAfter = (int) ABORT_DISTRIBUTION.sample();
+        seedRemaining = (int) SEED_FOR_DISTRIBUTION.sample();
+        state = State.WAITING;
+    }
+    /**
+     * Tell the node it is to remain passive for an amount of time.
+     * The amount of time before the reset check is determined by the estimated
+     * download speed, abort chance and seed time.
+     */
+    public void passive() {
+        resetAfter = Math.min(100 / CONFIG.getInt("download_bandwidth"), (int) ABORT_DISTRIBUTION.sample()) + (int) SEED_FOR_DISTRIBUTION.sample();
+        state = State.PASSIVE;
     }
     /**
      * Go through the list of possible active nodes performing a peer exchange with each.
@@ -60,15 +85,16 @@ public class Node {
      */
     private HashSet<Node> findPeers(HashSet<Node> possibles) {
         for (Node n : possibles) {
-            HashSet<Node> exchanged = n.getPeers();
-            if (null != exchanged) {
-                return exchanged;
+            if (null != n.getPeers()) {
+                return n.getPeers();
             }
         }
         return null;
     }
-    
-    public void search(int z) {
+    /**
+     * Search for the torrent's tracking data by repeatedly querying for it
+     */
+    public void search() {
         if (null == index) {
             // This node has never been contacted before
             index = new HashSet<Node>();
@@ -77,6 +103,7 @@ public class Node {
             // This node has been contacted and might be aware of an active node already
             peers = findPeers(index);
         }
+        int z = CONFIG.getInt("z");
         int requestCount = 0;
         while (null == peers) {
             peers = findPeers(query(z));
@@ -84,25 +111,29 @@ public class Node {
         }
         peers.add(this);
         index.add(this);
-        state = State.ACTIVE;
-        Statistics.changeJoined(1);
-        Statistics.changeRequestCount(requestCount);
+        state = State.DOWNLOADING;
+        Statistics.alter("joined", 1);
+        Statistics.add("request_count", requestCount);
     }
-    
-    public HashSet<Node> query(int z) {
+    /**
+     * Make a request to z randomly selected nodes 
+     * @param z
+     * @return The combined results obtained from all z nodes, duplicates removed
+     */
+    private HashSet<Node> query(int z) {
         HashSet<Node> results = new HashSet<Node>();
-        for (Node n : network.getRandomNodes(z)) {
-            HashSet<Node> response = n.respond(this);
-            results.addAll(response);
-            Statistics.changeResponseSize(response.size() - 1); // -1 to remove self reference
+        for (Node n : NETWORK.getRandomNodes(z)) {
+            results.addAll(n.respond(this));
         }
+        Statistics.add("response_size", results.size() - 1); // -1 to remove self reference
         return results;
     }
-        
+    /**
+     * Provide the requesting node with any details on nodes that are interested in the torrent
+     * @param from The requesting node
+     * @return This node's index
+     */    
     public HashSet<Node> respond(Node from) {
-        if (State.INACTIVE == state) {
-            throw new RuntimeException("Trying to get a response from an inactive node.");
-        }
         if (null == index) {
             index = new HashSet<Node>();
         }
@@ -110,29 +141,51 @@ public class Node {
         return index;
     }
     
-    public HashSet<Node> getPeers() {
-        return peers;
-    }
-    
     public void leave() {
-        peers.remove(this);
+        if (null != peers) {
+            peers.remove(this);
+            Statistics.alter("left", 1);
+        }
         peers = null;
         index = null;
-        state = State.INACTIVE;
-        network.remove(this);
-        Statistics.changeLeft(1);
+        state = State.DEAD;
+        NETWORK.replace(this);
     }
     
-    public void step(Config config) {
-        if (state == State.ACTIVE) {
-            if (availability-- == 0) {
-                leave();
-            }
-        }
-        else if (state == State.PASSIVE && timeToSearch != -1) {
-            if (timeToSearch-- == 0) {
-                search(config.getInt("z"));
-            }
+    public void step() {
+        switch (state) {
+            case PASSIVE:
+                resetAfter--;
+                if (resetAfter <= 0) {
+                    if (Math.random() <= CONFIG.getFloat("recycle_chance")) {
+                        passive();
+                    } else {
+                        NETWORK.replace(this);
+                        state = State.DEAD;
+                    }
+                }
+                break;
+            case WAITING:
+                searchAfter--;
+                if (searchAfter <= 0) {
+                    search();
+                }
+                break;
+            case DOWNLOADING:
+                percentDownloadComplete += Math.min(CONFIG.getInt("download_bandwidth"), peers.size() * CONFIG.getInt("upload_bandwidth"));
+                abortAfter--;
+                if (percentDownloadComplete >= 100) {
+                    state = State.SEEDING;
+                } else if (abortAfter <= 0) {
+                    leave();
+                }
+                break;
+            case SEEDING:
+                seedRemaining--;
+                if (seedRemaining <= 0) {
+                    leave();
+                }
+                break;
         }
     }
     
@@ -140,26 +193,20 @@ public class Node {
         if (null != index) {
             int badCount = 0;
             for (Node n : index) {
-                if (n.getState() == State.INACTIVE) {
+                if (n.state == State.DEAD) {
                     badCount++;
                 }
             }
-            Statistics.changeBadData(badCount);
+            Statistics.alter("bad_data", badCount);
             if (badCount != index.size()) {
-                Statistics.changeAwareness(1);
+                Statistics.alter("awareness", 1);
             }
         }
-        if (null != peers) {
-            Statistics.changePopularity(1);
+        if (state == State.DOWNLOADING) {
+            Statistics.alter("leechers", 1);
+        } else if (state == State.SEEDING) {
+            Statistics.alter("seeders", 1);
         }
-    }
-    
-    public void arriveAfter(int timeToSearch) {
-        this.timeToSearch = timeToSearch;
-    }
-    
-    public void stayFor(int availability) {
-        this.availability = availability;
     }
     
     @Override

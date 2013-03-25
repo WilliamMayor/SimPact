@@ -21,7 +21,6 @@ public class Log {
     }
 
     public void println(String line) {
-        System.out.println(name + ": " + line);
         if (null == out) {
             out = makeWriter(name, first);
         }

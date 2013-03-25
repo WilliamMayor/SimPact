@@ -20,7 +20,7 @@ public class Network {
         this.size = size;
         this.nodes = new Node[size];
         for (lastId = 0; lastId < size; lastId++) {
-            nodes[lastId] = new Node(this, lastId, lastId);
+            nodes[lastId] = new Node(lastId, lastId);
         }
     }
     /**
@@ -47,7 +47,7 @@ public class Network {
      * data beyond their index in the network.
      * @param node The node to be removed from the network
      */
-    public void remove(Node node) {
-        nodes[node.getPosition()] = new Node(this, ++lastId, node.getPosition());
+    public void replace(Node node) {
+        nodes[node.getPosition()] = new Node(++lastId, node.getPosition());
     }
 }

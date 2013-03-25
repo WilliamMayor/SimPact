@@ -1,5 +1,8 @@
 package uk.co.williammayor.simpact;
 
+import java.util.Arrays;
+import java.util.HashSet;
+
 public class Simulator {
     
     private Config config;
@@ -10,20 +13,30 @@ public class Simulator {
     
     public void trial() {
         Network network = new Network(config.getInt("n"));
-        Node[] activeNodes = network.getRandomNodes(config.getInt("max_popularity") + 1);
-        activeNodes[0].author(config.getInt("r"), config.getInt("author_availability"));
+        Node.NETWORK = network;
+        Node[] activeNodes = network.getRandomNodes(config.getInt("total_downloads") + 1);
+        Node author = activeNodes[0];
+        activeNodes = Arrays.copyOfRange(activeNodes, 1, activeNodes.length);
+        author.author();
+        boolean authorActive = true;
         for (Node n : network.getAll()) {
             n.check();
         }
-        for (int i = 1; i < activeNodes.length; i++) {
-            Node n = activeNodes[i];
-            n.arriveAfter(0);
-            n.stayFor(1);
+        for (Node n : activeNodes) {
+            n.activate();
         }
-        while (Statistics.getCurrentAwareness() != 0 && Statistics.getCurrentPopularity() != 0) {
+        HashSet<Node> peers = author.getPeers();
+        while (!peers.isEmpty()) {
             Statistics.step();
-            for (Node n : activeNodes) {
-                n.step(config);
+            if (authorActive && peers.size() > 1) {
+                author.leave();
+                authorActive = false;
+            }
+            for (Node n : network.getAll()) {
+                if (peers.isEmpty()) {
+                    break;
+                }
+                n.step();
             }
             for (Node n : network.getAll()) {
                 n.check();
