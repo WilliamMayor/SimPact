@@ -14,28 +14,22 @@ public class Simulator {
     public void trial() {
         Network network = new Network(config.getInt("n"));
         Node.NETWORK = network;
-        Node[] activeNodes = network.getRandomNodes(config.getInt("total_downloads") + 1);
+        Node[] activeNodes = network.getRandomNodes(config.getInt("constant_popularity"));
         Node author = activeNodes[0];
         activeNodes = Arrays.copyOfRange(activeNodes, 1, activeNodes.length);
         author.author();
-        boolean authorActive = true;
         for (Node n : network.getAll()) {
             n.check();
         }
         for (Node n : activeNodes) {
             n.activate();
         }
-        HashSet<Node> peers = author.getPeers();
-        while (!peers.isEmpty()) {
+        int time = 0;
+        while (config.getInt("max_hours") > time) {
+            time++;
             Statistics.step();
-            if (authorActive && peers.size() > 1) {
-                author.leave();
-                authorActive = false;
-            }
+            Statistics.alter("left", 0);
             for (Node n : network.getAll()) {
-                if (peers.isEmpty()) {
-                    break;
-                }
                 n.step();
             }
             for (Node n : network.getAll()) {

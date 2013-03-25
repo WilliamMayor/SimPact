@@ -5,16 +5,14 @@ import org.apache.commons.math3.distribution.ExponentialDistribution;
 
 public class Node {
     
-    public static enum State {PASSIVE, WAITING, DOWNLOADING, SEEDING, AUTHOR, DEAD}
+    public static enum State {PASSIVE, WAITING, ACTIVE, DEAD}
     public static Network NETWORK;
     public static Config CONFIG;
-    public static ExponentialDistribution PEER_ARRIVAL_DISTRIBUTION;
     public static ExponentialDistribution ABORT_DISTRIBUTION;
     public static ExponentialDistribution SEED_FOR_DISTRIBUTION;
     
     public static void setup(Config config) {
         CONFIG = config;
-        PEER_ARRIVAL_DISTRIBUTION = new ExponentialDistribution(config.getFloat("peer_arrival_average"));
         ABORT_DISTRIBUTION = new ExponentialDistribution(config.getFloat("average_abort_time"));
         SEED_FOR_DISTRIBUTION = new ExponentialDistribution(config.getFloat("average_seed_time"));
     }
@@ -23,11 +21,7 @@ public class Node {
     private int networkPosition;
     private HashSet<Node> index;
     private HashSet<Node> peers;
-    private int abortAfter;
-    private int seedRemaining;
-    private int searchAfter;
     private int resetAfter;
-    private int percentDownloadComplete;
     private State state;
             
     public Node(final int id, final int networkPosition) {
@@ -54,7 +48,7 @@ public class Node {
         peers = new HashSet<Node>();
         index.add(this);
         peers.add(this);
-        state = State.AUTHOR;
+        state = State.ACTIVE;
         for (Node n : NETWORK.getRandomNodes(CONFIG.getInt("r"))) {
             n.respond(this);
         }
@@ -63,9 +57,6 @@ public class Node {
      * Tell the node that it should attempt a download at some point
      */
     public void activate() {
-        searchAfter = (int) PEER_ARRIVAL_DISTRIBUTION.sample();
-        abortAfter = (int) ABORT_DISTRIBUTION.sample();
-        seedRemaining = (int) SEED_FOR_DISTRIBUTION.sample();
         state = State.WAITING;
     }
     /**
@@ -111,7 +102,7 @@ public class Node {
         }
         peers.add(this);
         index.add(this);
-        state = State.DOWNLOADING;
+        state = State.ACTIVE;
         Statistics.alter("joined", 1);
         Statistics.add("request_count", requestCount);
     }
@@ -141,17 +132,6 @@ public class Node {
         return index;
     }
     
-    public void leave() {
-        if (null != peers) {
-            peers.remove(this);
-            Statistics.alter("left", 1);
-        }
-        peers = null;
-        index = null;
-        state = State.DEAD;
-        NETWORK.replace(this);
-    }
-    
     public void step() {
         switch (state) {
             case PASSIVE:
@@ -166,25 +146,7 @@ public class Node {
                 }
                 break;
             case WAITING:
-                searchAfter--;
-                if (searchAfter <= 0) {
-                    search();
-                }
-                break;
-            case DOWNLOADING:
-                percentDownloadComplete += Math.min(CONFIG.getInt("download_bandwidth"), peers.size() * CONFIG.getInt("upload_bandwidth"));
-                abortAfter--;
-                if (percentDownloadComplete >= 100) {
-                    state = State.SEEDING;
-                } else if (abortAfter <= 0) {
-                    leave();
-                }
-                break;
-            case SEEDING:
-                seedRemaining--;
-                if (seedRemaining <= 0) {
-                    leave();
-                }
+                search();
                 break;
         }
     }
@@ -202,10 +164,9 @@ public class Node {
                 Statistics.alter("awareness", 1);
             }
         }
-        if (state == State.DOWNLOADING) {
-            Statistics.alter("leechers", 1);
-        } else if (state == State.SEEDING) {
+        if (state == State.ACTIVE) {
             Statistics.alter("seeders", 1);
+            Statistics.alter("leechers", 0);
         }
     }
     
